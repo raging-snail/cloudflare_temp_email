@@ -123,10 +123,14 @@ api.get('/api/new_address', async (c) => {
     }
     // create address
     const emailAddress = c.env.PREFIX + name + "@" + domain
+    // create jwt, also password
+    const jwt = await Jwt.sign({
+        address: emailAddress
+    }, c.env.JWT_SECRET)
     try {
         const { success } = await c.env.DB.prepare(
-            `INSERT INTO address(name) VALUES(?)`
-        ).bind(name + "@" + domain).run();
+            `INSERT INTO address(name,password) VALUES(?,?)`
+        ).bind(name + "@" + domain, jwt).run();
         if (!success) {
             return c.text("Failed to create address", 500)
         }
@@ -136,10 +140,6 @@ api.get('/api/new_address', async (c) => {
         }
         return c.text("Failed to create address", 500)
     }
-    // create jwt
-    const jwt = await Jwt.sign({
-        address: emailAddress
-    }, c.env.JWT_SECRET)
     return c.json({
         jwt: jwt
     })
